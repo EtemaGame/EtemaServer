@@ -1,0 +1,25 @@
+{
+  "name": "etema-server-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bot de Discord para administrar el servidor Etema",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node src/deploy-commands.js",
+    "validate": "node src/validate.js",
+    "export:guild": "node src/export-guild-state.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.3.1"
+  },
+  "overrides": {
+    "undici": "6.24.1"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "guildName": "Etema Mods",
+  "goals": [
+    "reducir roles redundantes",
+    "normalizar permisos de info",
+    "dejar un rol por mod",
+    "dejar un tutorial por mod"
+  ],
+  "roles": {
+    "staff": [
+      "Admin",
+      "Mod",
+      "Tester",
+      "Bot Keeper"
+    ],
+    "community": [
+      "Member",
+      "Supporter",
+      "Modder"
+    ],
+    "modRoles": [
+      "OtherStages",
+      "DailyBossesMore",
+      "AttributeModify",
+      "SmartTranslation",
+      "PotionEffects",
+      "NoMoreCritJump",
+      "DpsMeter",
+      "ArcaneEcho",
+      "Ragnar"
+    ],
+    "merge": [
+      {
+        "from": ["✦ User ✦", "・Member・", "✅ 𝓥𝓮𝓻𝓲𝓯𝓲𝓮𝓭 𝓨𝓾𝓼𝓮𝓻"],
+        "to": "Member"
+      }
+    ],
+    "review": [
+      "Muted",
+      "Supporter",
+      "Modder",
+      "Bot Keeper"
+    ],
+    "managedRoles": [
+      "EtemaServer",
+      "Dyno",
+      "VoiceMaster",
+      "HephBot Translate",
+      "Private Text & Voice Channel Bot"
+    ]
+  },
+  "categories": [
+    {
+      "name": "📢 INFO",
+      "visibility": "public_read_only",
+      "channels": [
+        { "name": "👋 welcome", "type": "text" },
+        { "name": "📝 rules", "type": "text" },
+        { "name": "📣 announcements", "type": "text" },
+        { "name": "📬 invitation-link", "type": "text" }
+      ]
+    },
+    {
+      "name": "💬 COMMUNITY",
+      "visibility": "public_chat",
+      "channels": [
+        { "name": "💬 general", "type": "text" },
+        { "name": "🤖 bot-commands-public", "type": "text" },
+        { "name": "💡 suggestions", "type": "forum" },
+        { "name": "🐞 issues-report", "type": "forum" }
+      ]
+    },
+    {
+      "name": "🧩 MODS",
+      "visibility": "public_chat",
+      "channels": [
+        { "name": "📌 mod-index", "type": "text" },
+        { "name": "🗺️ other-stages", "type": "text", "role": "OtherStages" },
+        { "name": "📑 other-stages-tutorial", "type": "forum", "role": "OtherStages" },
+        { "name": "🛡️ daily-bosses-more", "type": "text", "role": "DailyBossesMore" },
+        { "name": "📑 daily-bosses-more-tutorial", "type": "forum", "role": "DailyBossesMore" },
+        { "name": "⚙️ attribute-modify", "type": "text", "role": "AttributeModify" },
+        { "name": "📑 attribute-modify-tutorial", "type": "forum", "role": "AttributeModify" },
+        { "name": "🌐 smarttranslation", "type": "text", "role": "SmartTranslation" },
+        { "name": "📑 smarttranslation-tutorial", "type": "forum", "role": "SmartTranslation" },
+        { "name": "🧪 potion-effects", "type": "text", "role": "PotionEffects" },
+        { "name": "📑 potion-effects-tutorial", "type": "forum", "role": "PotionEffects" },
+        { "name": "🚫 no-more-crit-jump", "type": "text", "role": "NoMoreCritJump" },
+        { "name": "📑 no-more-crit-jump-tutorial", "type": "forum", "role": "NoMoreCritJump" },
+        { "name": "⚔️ dps-meter", "type": "text", "role": "DpsMeter" },
+        { "name": "📑 dps-meter-tutorial", "type": "forum", "role": "DpsMeter" },
+        { "name": "✨ arcane-echo", "type": "text", "role": "ArcaneEcho" },
+        { "name": "📑 arcane-echo-tutorial", "type": "forum", "role": "ArcaneEcho" },
+        { "name": "🧝 ragnar", "type": "text", "role": "Ragnar" },
+        { "name": "📑 ragnar-tutorial", "type": "forum", "role": "Ragnar" }
+      ]
+    },
+    {
+      "name": "🔒 PRIVATE",
+      "visibility": "staff_only",
+      "channels": [
+        { "name": "🤖 bot-sandbox", "type": "text" },
+        { "name": "🔧 mod-logs", "type": "text" },
+        { "name": "🔧 spam-logs", "type": "text" },
+        { "name": "💬 staff-chat", "type": "text" },
+        { "name": "📚 staff-guides", "type": "forum" },
+        { "name": "🧪 tester-lab", "type": "text" }
+      ]
+    }
+  ],
+  "notes": [
+    "subir el rol del bot por encima de los roles que deba administrar",
+    "evitar members sueltos en overwrites privados",
+    "normalizar INFO con patron solo lectura",
+    "usar foros para tutoriales por mod",
+    "no aplicar borrados sin confirmacion"
+  ]
+}
