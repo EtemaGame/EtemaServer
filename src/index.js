@@ -5,6 +5,7 @@ import { requireEnv } from './lib/config.js';
 import { acquireRuntimeLock } from './lib/runtime-lock.js';
 import { attachServerLogs } from './lib/server-logs.js';
 import { attachVoiceRooms, handleVoiceRoomInteraction } from './lib/voice-rooms.js';
+import { attachWelcomeMessages } from './lib/welcome.js';
 
 async function main() {
   const token = requireEnv('DISCORD_TOKEN');
@@ -102,6 +103,7 @@ async function main() {
 
   attachAutomod(client);
   attachServerLogs(client);
+  attachWelcomeMessages(client);
   attachVoiceRooms(client);
 
   try {

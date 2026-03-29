@@ -106,4 +106,5 @@ Ejecuta `install-24-7-task.cmd`.
 - `/moderar`
 - `/diagnostico`
 - `/automod`
+- `/bienvenida`
 - `/sala`
