@@ -1,6 +1,6 @@
 import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { getAutomodConfig } from './automod-config.js';
-import { registerAutomodStrike } from './automod-state.js';
+import { peekAutomodStrikeCount, registerAutomodStrike } from './automod-state.js';
 
 const SPAM_LOG_CHANNEL_NAME = '🔧-spam-logs';
 const messageHistory = new Map();
@@ -209,40 +209,79 @@ function resolveEscalatedTimeoutMinutes(config, strikeCount, fallbackMinutes) {
 
 async function applyAutomodAction(message, ruleLabel, action, timeoutMinutes, deleteMessage = true, config = null) {
   const results = [];
+  const warnings = [];
   let escalation = null;
 
-  if (deleteMessage && message.deletable) {
-    await message.delete().catch(() => null);
-    results.push('mensaje eliminado');
+  if (deleteMessage) {
+    if (!message.deletable) {
+      warnings.push('no se pudo eliminar el mensaje');
+    } else {
+      const deleted = await message.delete()
+        .then(() => true)
+        .catch(() => false);
+
+      if (deleted) {
+        results.push('mensaje eliminado');
+      } else {
+        warnings.push('no se pudo eliminar el mensaje');
+      }
+    }
   }
 
   if (action === 'timeout' && message.member?.moderatable) {
     let appliedTimeoutMinutes = timeoutMinutes;
+    let nextStrikeCount = null;
 
     if (config?.escalation?.enabled) {
-      const strike = await registerAutomodStrike(
+      const currentStrike = await peekAutomodStrikeCount(
         message.guildId,
         message.author.id,
         'message-timeout',
         config.escalation.resetHours,
       );
 
-      appliedTimeoutMinutes = resolveEscalatedTimeoutMinutes(config, strike.count, timeoutMinutes);
-      escalation = {
-        count: strike.count,
-        resetHours: config.escalation.resetHours,
-        appliedTimeoutMinutes,
-      };
+      nextStrikeCount = currentStrike.count + 1;
+      appliedTimeoutMinutes = resolveEscalatedTimeoutMinutes(config, nextStrikeCount, timeoutMinutes);
     }
 
-    await message.member
+    const timedOut = await message.member
       .timeout(appliedTimeoutMinutes * 60_000, `Automod: ${ruleLabel}`)
-      .catch(() => null);
-    results.push(`timeout ${appliedTimeoutMinutes}m`);
+      .then(() => true)
+      .catch(() => false);
+
+    if (timedOut) {
+      if (config?.escalation?.enabled) {
+        const strike = await registerAutomodStrike(
+          message.guildId,
+          message.author.id,
+          'message-timeout',
+          config.escalation.resetHours,
+        );
+
+        escalation = {
+          count: strike.count,
+          resetHours: config.escalation.resetHours,
+          appliedTimeoutMinutes,
+        };
+      } else if (nextStrikeCount !== null) {
+        escalation = {
+          count: nextStrikeCount,
+          resetHours: config.escalation.resetHours,
+          appliedTimeoutMinutes,
+        };
+      }
+
+      results.push(`timeout ${appliedTimeoutMinutes}m`);
+    } else {
+      warnings.push('no se pudo aplicar timeout');
+    }
+  } else if (action === 'timeout') {
+    warnings.push('no se pudo aplicar timeout');
   }
 
   return {
     results,
+    warnings,
     escalation,
   };
 }
@@ -326,6 +365,12 @@ async function handleMessageAutomod(message) {
       value: actionOutcome.results.join(', ') || 'solo log',
       inline: true,
     },
+    ...(actionOutcome.warnings.length > 0
+      ? [{
+        name: 'Avisos',
+        value: actionOutcome.warnings.join(', '),
+      }]
+      : []),
     {
       name: 'Mensaje',
       value: getMessageExcerpt(message.content),
@@ -370,18 +415,37 @@ async function handleJoinGuard(member) {
   }
 
   const actionResults = [];
+  const actionWarnings = [];
 
   if (config.joinGuard.action === 'timeout' && member.moderatable) {
-    await member.timeout(
+    const timedOut = await member.timeout(
       config.joinGuard.timeoutMinutes * 60_000,
       'Automod: cuenta demasiado nueva',
-    ).catch(() => null);
-    actionResults.push(`timeout ${config.joinGuard.timeoutMinutes}m`);
+    )
+      .then(() => true)
+      .catch(() => false);
+
+    if (timedOut) {
+      actionResults.push(`timeout ${config.joinGuard.timeoutMinutes}m`);
+    } else {
+      actionWarnings.push('no se pudo aplicar timeout');
+    }
   }
 
   if (config.joinGuard.action === 'kick' && member.kickable) {
-    await member.kick('Automod: cuenta demasiado nueva').catch(() => null);
-    actionResults.push('expulsado');
+    const kicked = await member.kick('Automod: cuenta demasiado nueva')
+      .then(() => true)
+      .catch(() => false);
+
+    if (kicked) {
+      actionResults.push('expulsado');
+    } else {
+      actionWarnings.push('no se pudo expulsar');
+    }
+  } else if (config.joinGuard.action === 'timeout' && !member.moderatable) {
+    actionWarnings.push('no se pudo aplicar timeout');
+  } else if (config.joinGuard.action === 'kick' && !member.kickable) {
+    actionWarnings.push('no se pudo expulsar');
   }
 
   await sendSpamLog(member.guild, {
@@ -407,6 +471,12 @@ async function handleJoinGuard(member) {
         name: 'Accion',
         value: actionResults.join(', ') || 'solo log',
       },
+      ...(actionWarnings.length > 0
+        ? [{
+          name: 'Avisos',
+          value: actionWarnings.join(', '),
+        }]
+        : []),
     ],
   });
 }

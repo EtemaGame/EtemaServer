@@ -44,6 +44,20 @@ function getStrikeBucket(state, guildId, userId, scope) {
   return state.guilds[guildId].users[userId].scopes[scope];
 }
 
+export async function peekAutomodStrikeCount(guildId, userId, scope, resetHours) {
+  const state = await readStateFile();
+  const now = Date.now();
+  const resetMs = Math.max(1, resetHours) * 60 * 60 * 1000;
+  const bucket = state.guilds[guildId]?.users?.[userId]?.scopes?.[scope] ?? [];
+  const activeStrikes = bucket.filter((timestamp) => now - new Date(timestamp).getTime() < resetMs);
+
+  return {
+    count: activeStrikes.length,
+    resetHours,
+    lastAt: activeStrikes.at(-1) ?? null,
+  };
+}
+
 export async function registerAutomodStrike(guildId, userId, scope, resetHours) {
   const state = await readStateFile();
   const now = Date.now();

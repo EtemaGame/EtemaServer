@@ -99,16 +99,6 @@ export async function ensureAdminAccess(interaction, requiredPermission) {
     return null;
   }
 
-  const ownerId = getConfiguredOwnerId();
-
-  if (ownerId && interaction.user.id !== ownerId) {
-    await sendEphemeral(
-      interaction,
-      'Solo el owner configurado del bot puede usar este comando. Revisa `BOT_OWNER_ID` o usa la cuenta correcta.',
-    );
-    return null;
-  }
-
   if (!context.ownerOverride && !context.actor.permissions.has(requiredPermission)) {
     await sendEphemeral(
       interaction,

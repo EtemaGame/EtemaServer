@@ -10,7 +10,7 @@ Bot de Discord con `discord.js` para administrar el servidor Etema.
   - `DISCORD_TOKEN`
   - `CLIENT_ID`
   - `GUILD_ID`
-  - `BOT_OWNER_ID` opcional
+  - `BOT_OWNER_ID` opcional, para darle a una cuenta override extra sobre las restricciones normales
 
 ## Preparar el entorno local
 
@@ -80,7 +80,7 @@ Estos archivos o carpetas deben quedarse fuera del repo:
    - `DISCORD_TOKEN`
    - `CLIENT_ID`
    - `GUILD_ID`
-   - `BOT_OWNER_ID` solo si quieres restringir comandos al owner
+   - `BOT_OWNER_ID` solo si quieres una cuenta con override extra
    - `WELCOME_ENABLED`, `WELCOME_CHANNEL_ID` y `WELCOME_MESSAGE_TEMPLATE` si quieres fijar la bienvenida por variables y que sobreviva redeploys
 4. Deja que Railway use el comando por defecto de Node. Este proyecto ya expone `npm start`.
 

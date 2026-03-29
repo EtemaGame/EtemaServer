@@ -37,7 +37,7 @@ export const command = {
       `Bot: **${context.me.user.tag}**`,
       `Servidor: **${context.guild.name}**`,
       `Rol mas alto del bot: **${context.me.roles.highest.name}**`,
-      `BOT_OWNER_ID: **${getConfiguredOwnerId() ?? 'no configurado'}**`,
+      `BOT_OWNER_ID (override): **${getConfiguredOwnerId() ?? 'no configurado'}**`,
     ];
 
     if (missing.length === 0) {
