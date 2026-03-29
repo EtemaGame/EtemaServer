@@ -78,6 +78,20 @@ export const command = {
         return;
       }
 
+      const targetPermissions = targetChannel.permissionsFor(context.me);
+
+      if (
+        !targetPermissions?.has(PermissionFlagsBits.ViewChannel)
+        || !targetPermissions.has(PermissionFlagsBits.SendMessages)
+        || !targetPermissions.has(PermissionFlagsBits.EmbedLinks)
+      ) {
+        await sendEphemeral(
+          interaction,
+          'I need `View Channel`, `Send Messages`, and `Embed Links` in that channel to post the panel.',
+        );
+        return;
+      }
+
       const panelPayload = buildModAlertRolePanel(context.guild);
 
       if (!panelPayload) {

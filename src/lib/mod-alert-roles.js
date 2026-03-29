@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ActionRowBuilder,
+  ChannelType,
   EmbedBuilder,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
@@ -70,6 +71,9 @@ function loadCatalogFromBlueprint() {
         const linkedTextChannel = channels.find(
           (channel) => channel?.role === roleName && channel?.type === 'text',
         );
+        const linkedTutorialForum = channels.find(
+          (channel) => channel?.role === roleName && channel?.type === 'forum',
+        );
         const linkedChannelSlug = linkedTextChannel?.name
           ? slugifyChannelName(linkedTextChannel.name)
           : null;
@@ -83,6 +87,10 @@ function loadCatalogFromBlueprint() {
           key: normalizeRoleKey(roleName),
           label,
           description: truncate(description, 100),
+          discussionChannelSlug: linkedChannelSlug,
+          tutorialForumSlug: linkedTutorialForum?.name
+            ? slugifyChannelName(linkedTutorialForum.name)
+            : null,
         };
       });
   } catch (error) {
@@ -129,8 +137,49 @@ function getRoleUpdateError(role, context) {
   return null;
 }
 
-function findRoleByCatalogEntry(guild, entry) {
-  return guild.roles.cache.find((role) => normalizeRoleKey(role.name) === entry.key) ?? null;
+function buildGuildRoleIndex(guild) {
+  const roleIndex = new Map();
+
+  for (const role of guild.roles.cache.values()) {
+    roleIndex.set(normalizeRoleKey(role.name), role);
+  }
+
+  return roleIndex;
+}
+
+function findChannelBySlug(guild, slug, allowedTypes) {
+  if (!slug) {
+    return null;
+  }
+
+  return guild.channels.cache.find((channel) => {
+    if (allowedTypes && !allowedTypes.includes(channel.type)) {
+      return false;
+    }
+
+    return slugifyChannelName(channel.name) === slug;
+  }) ?? null;
+}
+
+function formatLinkedTarget(channel, fallbackSlug, label) {
+  if (channel) {
+    return `${label}: <#${channel.id}>`;
+  }
+
+  if (fallbackSlug) {
+    return `${label}: #${fallbackSlug}`;
+  }
+
+  return null;
+}
+
+function formatRoleDestinations(entry) {
+  return [
+    formatLinkedTarget(entry.discussionChannel, entry.discussionChannelSlug, 'chat'),
+    formatLinkedTarget(entry.tutorialForum, entry.tutorialForumSlug, 'tutorial'),
+  ]
+    .filter(Boolean)
+    .join(' | ');
 }
 
 export function getAvailableModAlertRoles(guild) {
@@ -138,15 +187,25 @@ export function getAvailableModAlertRoles(guild) {
     return [];
   }
 
+  const roleIndex = buildGuildRoleIndex(guild);
+
   return modAlertRoleCatalog
     .map((entry) => {
-      const role = findRoleByCatalogEntry(guild, entry);
+      const role = roleIndex.get(entry.key) ?? null;
 
       if (!role) {
         return null;
       }
 
-      return { ...entry, role };
+      return {
+        ...entry,
+        role,
+        discussionChannel: findChannelBySlug(guild, entry.discussionChannelSlug, [
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement,
+        ]),
+        tutorialForum: findChannelBySlug(guild, entry.tutorialForumSlug, [ChannelType.GuildForum]),
+      };
     })
     .filter(Boolean);
 }
@@ -168,7 +227,10 @@ export function buildModAlertRolePanel(guild) {
     'Use the menu below to toggle the mod notification roles you want.',
     'Selecting a role you already have removes it. Selecting a role you do not have adds it.',
     '',
-    ...availableRoles.map((entry) => `- **${entry.label}**`),
+    ...availableRoles.map((entry) => {
+      const destinations = formatRoleDestinations(entry);
+      return destinations ? `- **${entry.label}**: ${destinations}` : `- **${entry.label}**`;
+    }),
     '',
     'You can also use `/mods list`, `/mods join`, and `/mods leave`.',
   ];
@@ -208,7 +270,10 @@ function buildRoleListMessage(availableRoles, member) {
   const subscribed = availableRoles.filter((entry) => memberRoleIds.has(entry.role.id));
   const availableLines = availableRoles.map((entry) => {
     const marker = memberRoleIds.has(entry.role.id) ? '[x]' : '[ ]';
-    return `${marker} ${entry.label} (\`${entry.role.name}\`)`;
+    const destinations = formatRoleDestinations(entry);
+    return destinations
+      ? `${marker} ${entry.label} (\`${entry.role.name}\`) -> ${destinations}`
+      : `${marker} ${entry.label} (\`${entry.role.name}\`)`;
   });
   const subscribedSummary = subscribed.length > 0
     ? subscribed.map((entry) => `\`${entry.role.name}\``).join(', ')
@@ -359,6 +424,8 @@ export async function handleModAlertRoleInteraction(interaction) {
     return true;
   }
 
+  await interaction.deferReply({ ephemeral: true });
+
   const availableRoles = getAvailableModAlertRoles(context.guild);
   const availableByKey = new Map(availableRoles.map((entry) => [entry.key, entry]));
   const selectedKeys = [...new Set(interaction.values)];
@@ -408,9 +475,8 @@ export async function handleModAlertRoleInteraction(interaction) {
     }
   }
 
-  await interaction.reply({
+  await interaction.editReply({
     content: buildToggleSummary(results),
-    ephemeral: true,
     allowedMentions: { parse: [] },
   });
   return true;
