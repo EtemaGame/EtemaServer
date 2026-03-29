@@ -8,14 +8,30 @@ const configPath = path.resolve(rootDir, 'data', 'welcome-config.json');
 
 export const DEFAULT_WELCOME_TEMPLATE = 'Hola {user}, bienvenido/a a **{server}**. Ya somos **{memberCount}** miembro(s).';
 
-const DEFAULT_GUILD_CONFIG = {
-  enabled: false,
-  channelId: null,
-  messageTemplate: DEFAULT_WELCOME_TEMPLATE,
-};
+function parseBooleanEnv(value, fallback) {
+  const normalized = String(value ?? '').trim().toLowerCase();
+
+  if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') {
+    return true;
+  }
+
+  if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') {
+    return false;
+  }
+
+  return fallback;
+}
+
+export function getDefaultWelcomeConfig() {
+  return {
+    enabled: parseBooleanEnv(process.env.WELCOME_ENABLED, false),
+    channelId: process.env.WELCOME_CHANNEL_ID?.trim() || null,
+    messageTemplate: process.env.WELCOME_MESSAGE_TEMPLATE?.trim() || DEFAULT_WELCOME_TEMPLATE,
+  };
+}
 
 function cloneDefaultGuildConfig() {
-  return JSON.parse(JSON.stringify(DEFAULT_GUILD_CONFIG));
+  return JSON.parse(JSON.stringify(getDefaultWelcomeConfig()));
 }
 
 async function readConfigFile() {

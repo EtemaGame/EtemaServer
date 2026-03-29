@@ -21,6 +21,12 @@ Bot de Discord con `discord.js` para administrar el servidor Etema.
 5. Registra comandos con `npm run deploy` o `deploy-commands.cmd`.
 6. Inicia el bot con `npm start` o `start-bot.cmd`.
 
+Variables opcionales para una bienvenida persistente en Railway:
+
+- `WELCOME_ENABLED=true`
+- `WELCOME_CHANNEL_ID=` id del canal de bienvenida
+- `WELCOME_MESSAGE_TEMPLATE=` usa `{user}`, `{server}` y `{memberCount}`
+
 ## Atajos para Windows
 
 Los `.cmd` del proyecto siguen funcionando para un flujo local comodo:
@@ -75,6 +81,7 @@ Estos archivos o carpetas deben quedarse fuera del repo:
    - `CLIENT_ID`
    - `GUILD_ID`
    - `BOT_OWNER_ID` solo si quieres restringir comandos al owner
+   - `WELCOME_ENABLED`, `WELCOME_CHANNEL_ID` y `WELCOME_MESSAGE_TEMPLATE` si quieres fijar la bienvenida por variables y que sobreviva redeploys
 4. Deja que Railway use el comando por defecto de Node. Este proyecto ya expone `npm start`.
 
 No hace falta exponer un puerto HTTP: este servicio corre como bot de Discord.
