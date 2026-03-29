@@ -121,6 +121,7 @@ Ejecuta `install-24-7-task.cmd`.
 
 ### Publicos
 
+- Las salas temporales usan el chat integrado del canal de voz. El bot ya no crea un `chat-*` separado para cada sala.
 - `/ping`: comprueba si el bot responde.
 - `/server`: muestra informacion basica del servidor actual.
 - `/mods list`: muestra los roles de aviso disponibles y tus suscripciones actuales.
@@ -160,6 +161,7 @@ Puedes pegar algo como esto en `#bot-commands` o `#how-to-use-the-bot`:
 `/mods list` Show the available mod alert roles and your current subscriptions.
 `/mods join mod:<mod>` Subscribe to a mod alert role.
 `/mods leave mod:<mod>` Unsubscribe from a mod alert role.
+Temporary rooms use the voice channel's built-in chat. The bot does not create a separate `chat-*` channel anymore.
 `/room status` Show the current status of your temporary voice room.
 `/room claim` Claim ownership if the current owner is gone.
 `/room rename name:<name>` Rename your temporary room.

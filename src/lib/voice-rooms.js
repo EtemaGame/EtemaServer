@@ -6,13 +6,12 @@ import {
   EmbedBuilder,
   Events,
   ModalBuilder,
-  OverwriteType,
   PermissionFlagsBits,
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { hasOwnerOverride, normalizeChannelName } from './admin.js';
+import { hasOwnerOverride } from './admin.js';
 import { withLeaseLock } from './lease-lock.js';
 import { sendGuildLog } from './logging.js';
 import { ensureVoiceRoomConfig, getVoiceRoomConfig } from './voice-room-config.js';
@@ -33,16 +32,6 @@ const roomOwnerPermissions = {
   MoveMembers: true,
   MuteMembers: true,
   DeafenMembers: true,
-};
-
-const textRoomMemberPermissions = {
-  ViewChannel: true,
-  SendMessages: true,
-  ReadMessageHistory: true,
-  AttachFiles: true,
-  EmbedLinks: true,
-  AddReactions: true,
-  UseApplicationCommands: true,
 };
 
 const creatorLock = new Set();
@@ -68,16 +57,6 @@ function buildRoomName(member, template) {
     .replaceAll('{username}', member.user.username)
     .trim()
     .slice(0, 100) || `${safeDisplayName}'s room`.slice(0, 100);
-}
-
-function buildTextRoomName(member, template) {
-  const displayName = String(member.displayName ?? member.user.username ?? 'user').trim() || 'user';
-  const raw = template
-    .replaceAll('{displayName}', displayName)
-    .replaceAll('{username}', member.user.username);
-  const normalized = normalizeChannelName(raw);
-
-  return normalized || `chat-${normalizeChannelName(displayName) || 'user'}`;
 }
 
 function getRoomLogFields(member, channel, ownerId) {
@@ -142,6 +121,16 @@ export function getTrackedTextChannel(guild, room) {
   return channel;
 }
 
+function isLegacyVoiceRoomTextChannel(channel) {
+  if (!channel || channel.type !== ChannelType.GuildText) {
+    return false;
+  }
+
+  const topic = String(channel.topic ?? '');
+  return topic.startsWith('Temporary private chat for')
+    || topic.startsWith('Chat privado temporal para');
+}
+
 function getHumanMembers(channel) {
   return channel.members.filter((member) => !member.user.bot);
 }
@@ -191,8 +180,8 @@ function buildVoiceRoomPanelEmbed(voiceChannel, textChannel, room) {
         inline: true,
       },
       {
-        name: 'Private chat',
-        value: textChannel ? textChannel.toString() : `built into ${voiceChannel}`,
+        name: 'Room chat',
+        value: textChannel ? `${textChannel} (legacy)` : `${voiceChannel} (built in)`,
         inline: true,
       },
     )
@@ -203,12 +192,6 @@ function buildVoiceRoomPanelEmbed(voiceChannel, textChannel, room) {
 async function getPanelHostChannel(voiceChannel, room) {
   if (!voiceChannel?.guild || !room) {
     return null;
-  }
-
-  const config = await getVoiceRoomConfig(voiceChannel.guild.id);
-
-  if (config.createTextChannel) {
-    return getTrackedTextChannel(voiceChannel.guild, room);
   }
 
   return voiceChannel.isTextBased() ? voiceChannel : null;
@@ -296,65 +279,6 @@ async function clearRoomOwner(channel, ownerId, reason) {
   ).catch(() => null);
 }
 
-async function createTextChannelForRoom(member, voiceChannel, config) {
-  if (!config.createTextChannel) {
-    return null;
-  }
-
-  const parentId = config.textCategoryId || config.categoryId || voiceChannel.parentId || null;
-
-  return member.guild.channels.create({
-    name: buildTextRoomName(member, config.textNameTemplate),
-    type: ChannelType.GuildText,
-    parent: parentId,
-    topic: `Temporary private chat for ${voiceChannel.name}`,
-    permissionOverwrites: [
-      {
-        id: member.guild.roles.everyone.id,
-        deny: [PermissionFlagsBits.ViewChannel],
-      },
-    ],
-    reason: `Chat temporal creado para ${member.user.tag} (${member.id})`,
-  });
-}
-
-async function syncTextChannelPermissions(textChannel, voiceChannel, room) {
-  const allowedIds = new Set([
-    room.ownerId,
-    ...(room.allowedMemberIds ?? []),
-    ...getHumanMembers(voiceChannel).map((member) => member.id),
-  ]);
-
-  await textChannel.permissionOverwrites.edit(
-    voiceChannel.guild.roles.everyone,
-    { ViewChannel: false },
-    { reason: 'Sala temporal: sincronizar visibilidad del chat privado' },
-  );
-
-  for (const userId of allowedIds) {
-    await textChannel.permissionOverwrites.edit(
-      userId,
-      textRoomMemberPermissions,
-      { reason: 'Sala temporal: sincronizar acceso al chat privado' },
-    );
-  }
-
-  for (const overwrite of textChannel.permissionOverwrites.cache.values()) {
-    if (overwrite.type !== OverwriteType.Member) {
-      continue;
-    }
-
-    if (allowedIds.has(overwrite.id)) {
-      continue;
-    }
-
-    await textChannel.permissionOverwrites.delete(
-      overwrite.id,
-      'Sala temporal: retirar acceso al chat privado',
-    ).catch(() => null);
-  }
-}
-
 export async function ensureVoiceRoomPanel(voiceChannel, room) {
   if (!voiceChannel?.guild || !room) {
     return room;
@@ -439,11 +363,10 @@ export async function syncVoiceRoomTextAccess(voiceChannel, room) {
     return room;
   }
 
-  const config = await getVoiceRoomConfig(voiceChannel.guild.id);
   let workingRoom = room;
-  let textChannel = getTrackedTextChannel(voiceChannel.guild, workingRoom);
+  const textChannel = getTrackedTextChannel(voiceChannel.guild, workingRoom);
 
-  if (!config.createTextChannel && workingRoom.textChannelId) {
+  if (workingRoom.textChannelId) {
     if (textChannel) {
       await textChannel.delete('Desactivar chats privados separados para usar el chat integrado').catch(() => null);
     }
@@ -455,70 +378,15 @@ export async function syncVoiceRoomTextAccess(voiceChannel, room) {
       return draft;
     }) ?? workingRoom;
 
-    textChannel = null;
   }
 
-  if (!textChannel && config.createTextChannel) {
-    const textLock = await withLeaseLock(
-      `voice-text-${voiceChannel.guild.id}-${workingRoom.channelId}`,
-      async () => {
-        const latestRoom = await getVoiceRoom(voiceChannel.guild.id, workingRoom.channelId);
+  const panelHostChannel = await getPanelHostChannel(voiceChannel, workingRoom);
 
-        if (!latestRoom) {
-          return workingRoom;
-        }
-
-        const latestTextChannel = getTrackedTextChannel(voiceChannel.guild, latestRoom);
-
-        if (latestTextChannel) {
-          return latestRoom;
-        }
-
-        const owner = await voiceChannel.guild.members.fetch(latestRoom.ownerId).catch(() => null);
-
-        if (!owner) {
-          return latestRoom;
-        }
-
-        const createdTextChannel = await createTextChannelForRoom(owner, voiceChannel, config).catch(() => null);
-
-        if (!createdTextChannel) {
-          return latestRoom;
-        }
-
-        return updateVoiceRoom(voiceChannel.guild.id, latestRoom.channelId, (draft) => {
-          draft.textChannelId = createdTextChannel.id;
-          draft.updatedAt = new Date().toISOString();
-          return draft;
-        }) ?? latestRoom;
-      },
-    );
-
-    if (textLock.acquired && textLock.value) {
-      workingRoom = textLock.value;
-      textChannel = getTrackedTextChannel(voiceChannel.guild, workingRoom);
-    } else {
-      const refreshedRoom = await getVoiceRoom(voiceChannel.guild.id, workingRoom.channelId);
-
-      if (refreshedRoom) {
-        workingRoom = refreshedRoom;
-        textChannel = getTrackedTextChannel(voiceChannel.guild, workingRoom);
-      }
-    }
+  if (panelHostChannel?.isTextBased()) {
+    return ensureVoiceRoomPanel(voiceChannel, workingRoom);
   }
 
-  if (!textChannel) {
-    const panelHostChannel = await getPanelHostChannel(voiceChannel, workingRoom);
-
-    if (panelHostChannel?.isTextBased()) {
-      return ensureVoiceRoomPanel(voiceChannel, workingRoom);
-    }
-
-    return workingRoom;
-  }
-
-  await syncTextChannelPermissions(textChannel, voiceChannel, workingRoom);
-  return ensureVoiceRoomPanel(voiceChannel, workingRoom);
+  return workingRoom;
 }
 
 export async function allowVoiceRoomMember(guildId, channelId, userId) {
@@ -615,7 +483,7 @@ async function deleteTrackedRoom(guild, channel, reason, actorTag = null) {
     },
     {
       name: 'Texto privado',
-      value: room?.textChannelId ? `<#${room.textChannelId}>` : 'sin canal de texto',
+      value: room?.textChannelId ? `<#${room.textChannelId}> (legacy)` : 'chat integrado del canal de voz',
     },
   ], 0x95a5a6);
 }
@@ -699,11 +567,10 @@ async function createVoiceRoomForMember(member, creatorChannel, config) {
   });
 
   await applyRoomOwner(channel, member.id, 'Sala temporal: owner inicial');
-  const textChannel = await createTextChannelForRoom(member, channel, config).catch(() => null);
 
   const room = {
     channelId: channel.id,
-    textChannelId: textChannel?.id ?? null,
+    textChannelId: null,
     panelMessageId: null,
     ownerId: member.id,
     creatorChannelId: creatorChannel.id,
@@ -719,34 +586,12 @@ async function createVoiceRoomForMember(member, creatorChannel, config) {
   } catch (error) {
     await removeVoiceRoom(member.guild.id, channel.id);
 
-    if (textChannel) {
-      await textChannel.delete('No se pudo mover al owner a la sala temporal').catch(() => null);
-    }
-
     await channel.delete('No se pudo mover al owner a la sala temporal').catch(() => null);
     throw error;
   }
 
-  const syncedRoom = await syncVoiceRoomTextAccess(channel, room);
+  await syncVoiceRoomTextAccess(channel, room);
   await sendGuildLog(member.guild, 'Sala temporal creada', getRoomLogFields(member, channel, member.id), 0x2ecc71);
-
-  if (syncedRoom?.textChannelId) {
-    await sendGuildLog(member.guild, 'Chat privado temporal creado', [
-      {
-        name: 'Sala',
-        value: `${channel.name} (\`${channel.id}\`)`,
-      },
-      {
-        name: 'Texto',
-        value: `<#${syncedRoom.textChannelId}>`,
-      },
-      {
-        name: 'Owner',
-        value: `<@${member.id}>`,
-        inline: true,
-      },
-    ], 0x1abc9c);
-  }
 
   return channel;
 }
@@ -857,33 +702,31 @@ async function pruneVoiceRoomState(client) {
       }
     }
 
-    if (!config.createTextChannel) {
-      const trackedTextIds = new Set(
-        rooms
-          .map((room) => room.textChannelId)
-          .filter(Boolean),
-      );
-      const targetParentId = config.textCategoryId || config.categoryId || null;
+    const trackedTextIds = new Set(
+      rooms
+        .map((room) => room.textChannelId)
+        .filter(Boolean),
+    );
+    const targetParentId = config.textCategoryId || config.categoryId || null;
 
-      const orphanChannels = guild.channels.cache.filter((channel) => {
-        if (channel.type !== ChannelType.GuildText) {
-          return false;
-        }
-
-        if (trackedTextIds.has(channel.id)) {
-          return false;
-        }
-
-        if (targetParentId && channel.parentId !== targetParentId) {
-          return false;
-        }
-
-        return String(channel.topic ?? '').startsWith('Chat privado temporal para');
-      });
-
-      for (const orphanChannel of orphanChannels.values()) {
-        await orphanChannel.delete('Limpiar chats privados legacy de salas temporales').catch(() => null);
+    const orphanChannels = guild.channels.cache.filter((channel) => {
+      if (!isLegacyVoiceRoomTextChannel(channel)) {
+        return false;
       }
+
+      if (trackedTextIds.has(channel.id)) {
+        return false;
+      }
+
+      if (targetParentId && channel.parentId !== targetParentId) {
+        return false;
+      }
+
+      return true;
+    });
+
+    for (const orphanChannel of orphanChannels.values()) {
+      await orphanChannel.delete('Limpiar chats privados legacy de salas temporales').catch(() => null);
     }
   }
 }

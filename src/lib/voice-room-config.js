@@ -13,7 +13,7 @@ const DEFAULT_GUILD_CONFIG = {
   roomNameTemplate: 'Sala de {displayName}',
   defaultUserLimit: 0,
   bitrate: null,
-  createTextChannel: true,
+  createTextChannel: false,
   textCategoryId: null,
   textNameTemplate: 'chat-{displayName}',
 };
@@ -25,7 +25,7 @@ const BUILTIN_GUILD_CONFIG = {
     roomNameTemplate: 'Sala de {displayName}',
     defaultUserLimit: 0,
     bitrate: 64_000,
-    createTextChannel: true,
+    createTextChannel: false,
     textCategoryId: '1448148227793883176',
     textNameTemplate: 'chat-{displayName}',
   },

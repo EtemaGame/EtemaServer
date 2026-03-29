@@ -164,7 +164,7 @@ export const command = {
           `Members: **${roomContext.channel.members.size}**`,
           `Limit: **${roomContext.channel.userLimit || 0}**`,
           `Locked: **${getLockState(roomContext.channel) ? 'yes' : 'no'}**`,
-          `Room chat: ${textChannel ? textChannel.toString() : 'built into this room'}`,
+          `Room chat: ${textChannel ? `${textChannel} (legacy)` : `${roomContext.channel} (built in)`}`,
         ].join('\n'),
       );
       return;
