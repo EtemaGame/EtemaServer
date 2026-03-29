@@ -211,7 +211,7 @@ export const command = {
 
     const result = await sendWelcomeMessage(context.actor, {
       ignoreEnabled: true,
-      prefix: 'Prueba manual de bienvenida:',
+      prefix: 'Welcome message test:',
     }).catch((error) => ({
       sent: false,
       reason: error.message,

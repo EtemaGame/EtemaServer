@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(currentDir, '..', '..');
 const configPath = path.resolve(rootDir, 'data', 'welcome-config.json');
 
-export const DEFAULT_WELCOME_TEMPLATE = 'Hola {user}, bienvenido/a a **{server}**. Ya somos **{memberCount}** miembro(s).';
+export const DEFAULT_WELCOME_TEMPLATE = 'Welcome {user} to **{server}**. We now have **{memberCount}** member(s).';
 
 function parseBooleanEnv(value, fallback) {
   const normalized = String(value ?? '').trim().toLowerCase();
