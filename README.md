@@ -116,3 +116,67 @@ Ejecuta `install-24-7-task.cmd`.
 - `/bienvenida`
 - `/mods`
 - `/room`
+
+## Guia rapida de comandos
+
+### Publicos
+
+- `/ping`: comprueba si el bot responde.
+- `/server`: muestra informacion basica del servidor actual.
+- `/mods list`: muestra los roles de aviso disponibles y tus suscripciones actuales.
+- `/mods join mod:<mod>`: te suscribe a los avisos de un mod.
+- `/mods leave mod:<mod>`: te quita los avisos de un mod.
+- `/room status`: muestra el estado de tu sala temporal.
+- `/room claim`: reclama la sala si el owner actual ya no esta dentro.
+- `/room rename name:<nuevo nombre>`: cambia el nombre de tu sala temporal.
+- `/room limit slots:<numero>`: cambia el limite de usuarios de la sala.
+- `/room lock`: bloquea la sala.
+- `/room unlock`: desbloquea la sala.
+- `/room allow user:<usuario>`: permite acceso a una persona concreta.
+- `/room kick user:<usuario>`: saca de la sala a una persona conectada.
+- `/room transfer user:<usuario>`: transfiere la ownership de la sala.
+
+### Privados o de staff
+
+- `/limpiar`: elimina mensajes recientes del canal actual.
+- `/rol`: crea, edita, asigna y quita roles.
+- `/canal`: crea y configura canales del servidor.
+- `/moderar`: timeout, kick y ban sobre miembros.
+- `/diagnostico`: revisa permisos y requisitos del bot.
+- `/automod`: configura la moderacion automatica.
+- `/bienvenida`: configura el mensaje de bienvenida.
+- `/mods panel`: publica el panel de autoasignacion para roles de aviso.
+
+## Texto pegable para Discord
+
+Puedes pegar algo como esto en `#bot-commands` o `#how-to-use-the-bot`:
+
+```md
+**Bot Quick Guide**
+
+**Public commands**
+`/ping` Check whether the bot is responding.
+`/server` Show basic information about the server.
+`/mods list` Show the available mod alert roles and your current subscriptions.
+`/mods join mod:<mod>` Subscribe to a mod alert role.
+`/mods leave mod:<mod>` Unsubscribe from a mod alert role.
+`/room status` Show the current status of your temporary voice room.
+`/room claim` Claim ownership if the current owner is gone.
+`/room rename name:<name>` Rename your temporary room.
+`/room limit slots:<number>` Change the user limit of the room.
+`/room lock` Lock the room.
+`/room unlock` Unlock the room.
+`/room allow user:<user>` Allow a specific user into the room.
+`/room kick user:<user>` Disconnect a user from your room.
+`/room transfer user:<user>` Transfer room ownership.
+
+**Staff commands**
+`/limpiar`
+`/rol`
+`/canal`
+`/moderar`
+`/diagnostico`
+`/automod`
+`/bienvenida`
+`/mods panel`
+```
