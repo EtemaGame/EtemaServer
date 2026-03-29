@@ -2,6 +2,7 @@ import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
 import { loadCommands } from './lib/commands.js';
 import { attachAutomod } from './lib/automod.js';
 import { requireEnv } from './lib/config.js';
+import { handleModAlertRoleInteraction } from './lib/mod-alert-roles.js';
 import { acquireRuntimeLock } from './lib/runtime-lock.js';
 import { attachServerLogs } from './lib/server-logs.js';
 import { attachVoiceRooms, handleVoiceRoomInteraction } from './lib/voice-rooms.js';
@@ -43,8 +44,19 @@ async function main() {
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {
-    if (interaction.isButton() || interaction.isUserSelectMenu() || interaction.isModalSubmit()) {
+    if (
+      interaction.isButton()
+      || interaction.isStringSelectMenu()
+      || interaction.isUserSelectMenu()
+      || interaction.isModalSubmit()
+    ) {
       try {
+        const handledModAlertRoles = await handleModAlertRoleInteraction(interaction);
+
+        if (handledModAlertRoles) {
+          return;
+        }
+
         const handled = await handleVoiceRoomInteraction(interaction);
 
         if (handled) {
