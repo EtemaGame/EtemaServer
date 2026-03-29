@@ -106,7 +106,7 @@ Ejecuta `install-24-7-task.cmd`.
 ## Comandos incluidos
 
 - `/ping`
-- `/servidor`
+- `/server`
 - `/limpiar`
 - `/rol`
 - `/canal`
@@ -115,4 +115,4 @@ Ejecuta `install-24-7-task.cmd`.
 - `/automod`
 - `/bienvenida`
 - `/mods`
-- `/sala`
+- `/room`

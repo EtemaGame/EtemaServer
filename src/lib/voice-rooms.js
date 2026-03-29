@@ -60,24 +60,24 @@ function getMemberLockKey(member) {
 }
 
 function buildRoomName(member, template) {
-  const displayName = String(member.displayName ?? member.user.username ?? 'Usuario').trim();
-  const safeDisplayName = displayName || 'Usuario';
+  const displayName = String(member.displayName ?? member.user.username ?? 'User').trim();
+  const safeDisplayName = displayName || 'User';
 
   return template
     .replaceAll('{displayName}', safeDisplayName)
     .replaceAll('{username}', member.user.username)
     .trim()
-    .slice(0, 100) || `Sala de ${safeDisplayName}`.slice(0, 100);
+    .slice(0, 100) || `${safeDisplayName}'s room`.slice(0, 100);
 }
 
 function buildTextRoomName(member, template) {
-  const displayName = String(member.displayName ?? member.user.username ?? 'usuario').trim() || 'usuario';
+  const displayName = String(member.displayName ?? member.user.username ?? 'user').trim() || 'user';
   const raw = template
     .replaceAll('{displayName}', displayName)
     .replaceAll('{username}', member.user.username);
   const normalized = normalizeChannelName(raw);
 
-  return normalized || `chat-${normalizeChannelName(displayName) || 'usuario'}`;
+  return normalized || `chat-${normalizeChannelName(displayName) || 'user'}`;
 }
 
 function getRoomLogFields(member, channel, ownerId) {
@@ -162,11 +162,11 @@ function canManageRoom(actor, guild, room) {
 function buildVoiceRoomPanelEmbed(voiceChannel, textChannel, room) {
   return new EmbedBuilder()
     .setColor(0x5865f2)
-    .setTitle('Panel de sala temporal')
-    .setDescription('Usa estos botones para gestionar rapido la sala sin depender de comandos.')
+    .setTitle('Temporary Room Panel')
+    .setDescription('Use these buttons to manage the room quickly without commands.')
     .addFields(
       {
-        name: 'Sala',
+        name: 'Room',
         value: `${voiceChannel.name}\n\`${voiceChannel.id}\``,
         inline: true,
       },
@@ -176,27 +176,27 @@ function buildVoiceRoomPanelEmbed(voiceChannel, textChannel, room) {
         inline: true,
       },
       {
-        name: 'Miembros',
+        name: 'Members',
         value: String(voiceChannel.members.size),
         inline: true,
       },
       {
-        name: 'Limite',
+        name: 'Limit',
         value: String(voiceChannel.userLimit || 0),
         inline: true,
       },
       {
-        name: 'Bloqueada',
-        value: isRoomLocked(voiceChannel) ? 'si' : 'no',
+        name: 'Locked',
+        value: isRoomLocked(voiceChannel) ? 'yes' : 'no',
         inline: true,
       },
       {
-        name: 'Chat privado',
-        value: textChannel ? textChannel.toString() : `integrado en ${voiceChannel}`,
+        name: 'Private chat',
+        value: textChannel ? textChannel.toString() : `built into ${voiceChannel}`,
         inline: true,
       },
     )
-    .setFooter({ text: 'Claim funciona cuando el owner actual ya no esta dentro.' })
+    .setFooter({ text: 'Claim works when the current owner is no longer inside.' })
     .setTimestamp();
 }
 
@@ -239,7 +239,7 @@ function buildVoiceRoomPanelComponents(voiceChannel, room) {
     new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(buildPanelCustomId('limit-open', room.channelId))
-        .setLabel('Limite')
+        .setLabel('Limit')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId(buildPanelCustomId('transfer', room.channelId))
@@ -252,17 +252,17 @@ function buildVoiceRoomPanelComponents(voiceChannel, room) {
 function buildVoiceRoomLimitModal(channelId, currentLimit) {
   const input = new TextInputBuilder()
     .setCustomId(LIMIT_INPUT_CUSTOM_ID)
-    .setLabel('Limite exacto de usuarios')
+    .setLabel('Exact user limit')
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
     .setValue(String(currentLimit))
-    .setPlaceholder('0 = sin limite, o un numero entre 1 y 99')
+    .setPlaceholder('0 = no limit, or a number between 1 and 99')
     .setMinLength(1)
     .setMaxLength(2);
 
   return new ModalBuilder()
     .setCustomId(buildPanelCustomId('limit-submit', channelId))
-    .setTitle('Configurar limite de sala')
+    .setTitle('Set room limit')
     .addComponents(
       new ActionRowBuilder().addComponents(input),
     );
@@ -307,7 +307,7 @@ async function createTextChannelForRoom(member, voiceChannel, config) {
     name: buildTextRoomName(member, config.textNameTemplate),
     type: ChannelType.GuildText,
     parent: parentId,
-    topic: `Chat privado temporal para ${voiceChannel.name}`,
+    topic: `Temporary private chat for ${voiceChannel.name}`,
     permissionOverwrites: [
       {
         id: member.guild.roles.everyone.id,
@@ -937,14 +937,14 @@ async function replyEphemeral(interaction, payload) {
 
 async function getPanelInteractionContext(interaction, channelId) {
   if (!interaction.inGuild() || !interaction.guild) {
-    await replyEphemeral(interaction, { content: 'Esto solo funciona dentro del servidor.' });
+    await replyEphemeral(interaction, { content: 'This only works inside the server.' });
     return null;
   }
 
   const actor = await interaction.guild.members.fetch(interaction.user.id).catch(() => null);
 
   if (!actor) {
-    await replyEphemeral(interaction, { content: 'No pude identificarte dentro del servidor.' });
+    await replyEphemeral(interaction, { content: 'I could not identify you inside the server.' });
     return null;
   }
 
@@ -952,7 +952,7 @@ async function getPanelInteractionContext(interaction, channelId) {
   const voiceChannel = getTrackedVoiceChannel(interaction.guild, channelId);
 
   if (!room || !voiceChannel) {
-    await replyEphemeral(interaction, { content: 'La sala ya no existe o ya no esta gestionada por el bot.' });
+    await replyEphemeral(interaction, { content: 'This room no longer exists or is no longer managed by the bot.' });
     return null;
   }
 
@@ -983,7 +983,7 @@ async function sendPanelLog(guild, actor, voiceChannel, title, fields = [], colo
 
 async function handleLockAction(interaction, context, locked) {
   if (!canManageRoom(context.actor, context.guild, context.room)) {
-    await replyEphemeral(interaction, { content: 'Solo el owner de la sala o el staff puede usar este boton.' });
+    await replyEphemeral(interaction, { content: 'Only the room owner or staff can use this button.' });
     return true;
   }
 
@@ -1001,7 +1001,7 @@ async function handleLockAction(interaction, context, locked) {
   }
 
   await interaction.editReply({
-    content: locked ? 'Sala bloqueada.' : 'Sala desbloqueada.',
+    content: locked ? 'Room locked.' : 'Room unlocked.',
   }).catch(() => null);
 
   await sendPanelLog(context.guild, context.actor, context.voiceChannel, locked ? 'Sala temporal bloqueada desde panel' : 'Sala temporal desbloqueada desde panel');
@@ -1010,7 +1010,7 @@ async function handleLockAction(interaction, context, locked) {
 
 async function handleLimitOpen(interaction, context) {
   if (!canManageRoom(context.actor, context.guild, context.room)) {
-    await replyEphemeral(interaction, { content: 'Solo el owner de la sala o el staff puede cambiar el limite.' });
+    await replyEphemeral(interaction, { content: 'Only the room owner or staff can change the limit.' });
     return true;
   }
 
@@ -1022,7 +1022,7 @@ async function handleLimitOpen(interaction, context) {
 
 async function handleLimitSubmit(interaction, context) {
   if (!canManageRoom(context.actor, context.guild, context.room)) {
-    await replyEphemeral(interaction, { content: 'Solo el owner de la sala o el staff puede cambiar el limite.' });
+    await replyEphemeral(interaction, { content: 'Only the room owner or staff can change the limit.' });
     return true;
   }
 
@@ -1030,21 +1030,21 @@ async function handleLimitSubmit(interaction, context) {
   const rawInput = String(interaction.fields.getTextInputValue(LIMIT_INPUT_CUSTOM_ID) ?? '').trim();
 
   if (!/^\d{1,2}$/.test(rawInput)) {
-    await replyEphemeral(interaction, { content: 'Escribe un numero entero entre **0** y **99**.' });
+    await replyEphemeral(interaction, { content: 'Enter a whole number between **0** and **99**.' });
     return true;
   }
 
   const rawValue = Number(rawInput);
 
   if (!Number.isInteger(rawValue) || rawValue < 0 || rawValue > 99) {
-    await replyEphemeral(interaction, { content: 'Ese limite no es valido.' });
+    await replyEphemeral(interaction, { content: 'That limit is not valid.' });
     return true;
   }
 
   const nextLimit = rawValue;
 
   if (nextLimit === currentLimit) {
-    await replyEphemeral(interaction, { content: `El limite ya esta en **${currentLimit}**.` });
+    await replyEphemeral(interaction, { content: `The limit is already **${currentLimit}**.` });
     return true;
   }
 
@@ -1058,7 +1058,7 @@ async function handleLimitSubmit(interaction, context) {
   }
 
   await interaction.editReply({
-    content: `Limite actualizado a **${nextLimit}**.`,
+    content: `Room limit updated to **${nextLimit}**.`,
   }).catch(() => null);
 
   await sendPanelLog(context.guild, context.actor, context.voiceChannel, 'Limite de sala temporal actualizado desde panel', [
@@ -1070,12 +1070,12 @@ async function handleLimitSubmit(interaction, context) {
 
 async function handleClaimAction(interaction, context) {
   if (context.actor.voice.channelId !== context.voiceChannel.id) {
-    await replyEphemeral(interaction, { content: 'Debes estar dentro de la sala para reclamarla.' });
+    await replyEphemeral(interaction, { content: 'You must be inside the room to claim it.' });
     return true;
   }
 
   if (context.voiceChannel.members.has(context.room.ownerId)) {
-    await replyEphemeral(interaction, { content: 'El owner actual sigue dentro de la sala.' });
+    await replyEphemeral(interaction, { content: 'The current owner is still inside the room.' });
     return true;
   }
 
@@ -1093,7 +1093,7 @@ async function handleClaimAction(interaction, context) {
     await ensureVoiceRoomPanel(context.voiceChannel, refreshedRoom);
   }
 
-  await interaction.editReply({ content: 'Ownership reclamada correctamente.' }).catch(() => null);
+  await interaction.editReply({ content: 'Ownership reclaimed successfully.' }).catch(() => null);
   await sendPanelLog(context.guild, context.actor, context.voiceChannel, 'Ownership de sala temporal reclamada desde panel', [
     { name: 'Antes', value: context.room.ownerId ? `<@${context.room.ownerId}>` : 'sin owner', inline: true },
     { name: 'Despues', value: `<@${context.actor.id}>`, inline: true },
@@ -1103,18 +1103,18 @@ async function handleClaimAction(interaction, context) {
 
 async function handleTransferButton(interaction, context) {
   if (!canManageRoom(context.actor, context.guild, context.room)) {
-    await replyEphemeral(interaction, { content: 'Solo el owner de la sala o el staff puede usar este boton.' });
+    await replyEphemeral(interaction, { content: 'Only the room owner or staff can use this button.' });
     return true;
   }
 
   const menu = new UserSelectMenuBuilder()
     .setCustomId(buildPanelCustomId('transfer-select', context.room.channelId))
-    .setPlaceholder('Selecciona al nuevo owner')
+    .setPlaceholder('Select the new owner')
     .setMinValues(1)
     .setMaxValues(1);
 
   await replyEphemeral(interaction, {
-    content: 'Elige al nuevo owner. Debe estar conectado dentro de la sala.',
+    content: 'Choose the new owner. They must be connected inside the room.',
     components: [new ActionRowBuilder().addComponents(menu)],
   });
   return true;
@@ -1122,7 +1122,7 @@ async function handleTransferButton(interaction, context) {
 
 async function handleTransferSelect(interaction, context) {
   if (!canManageRoom(context.actor, context.guild, context.room)) {
-    await replyEphemeral(interaction, { content: 'Solo el owner de la sala o el staff puede transferirla.' });
+    await replyEphemeral(interaction, { content: 'Only the room owner or staff can transfer it.' });
     return true;
   }
 
@@ -1130,7 +1130,7 @@ async function handleTransferSelect(interaction, context) {
   const targetMember = await context.guild.members.fetch(userId).catch(() => null);
 
   if (!targetMember || targetMember.voice.channelId !== context.voiceChannel.id) {
-    await replyEphemeral(interaction, { content: 'El nuevo owner debe estar conectado dentro de la sala.' });
+    await replyEphemeral(interaction, { content: 'The new owner must be connected inside the room.' });
     return true;
   }
 
@@ -1149,7 +1149,7 @@ async function handleTransferSelect(interaction, context) {
   }
 
   await interaction.editReply({
-    content: `Ownership transferida a **${targetMember.user.tag}**.`,
+    content: `Ownership transferred to **${targetMember.user.tag}**.`,
   }).catch(() => null);
 
   await sendPanelLog(context.guild, context.actor, context.voiceChannel, 'Ownership de sala temporal transferida desde panel', [

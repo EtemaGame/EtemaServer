@@ -42,7 +42,7 @@ async function getRoomCommandContext(interaction, options = {}) {
   if (!managed) {
     await sendEphemeral(
       interaction,
-      'Debes estar conectado a una sala temporal gestionada por este bot para usar `/sala`.',
+      'You must be connected to a temporary room managed by this bot to use `/room`.',
     );
     return null;
   }
@@ -50,7 +50,7 @@ async function getRoomCommandContext(interaction, options = {}) {
   if (requireOwnership && !isRoomOwnerOrStaff(context, managed.room)) {
     await sendEphemeral(
       interaction,
-      'Solo el owner de la sala o alguien con permisos de staff puede gestionarla.',
+      'Only the room owner or someone with staff permissions can manage it.',
     );
     return null;
   }
@@ -64,35 +64,35 @@ async function getRoomCommandContext(interaction, options = {}) {
 
 export const command = {
   data: new SlashCommandBuilder()
-    .setName('sala')
-    .setDescription('Gestiona tu sala temporal de voz.')
+    .setName('room')
+    .setDescription('Manage your temporary voice room.')
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('estado')
-        .setDescription('Muestra el estado de tu sala temporal actual.'),
+        .setName('status')
+        .setDescription('Show the current status of your temporary room.'),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('claim')
-        .setDescription('Reclama la ownership si el owner actual ya no esta en la sala.'),
+        .setDescription('Claim ownership if the current owner is no longer in the room.'),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('renombrar')
-        .setDescription('Cambia el nombre de tu sala temporal.')
+        .setName('rename')
+        .setDescription('Rename your temporary room.')
         .addStringOption((option) =>
-          option.setName('nombre').setDescription('Nuevo nombre de la sala.').setRequired(true),
+          option.setName('name').setDescription('New room name.').setRequired(true),
         ),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('limite')
-        .setDescription('Ajusta el limite de usuarios de la sala.')
+        .setName('limit')
+        .setDescription('Adjust the user limit of the room.')
         .addIntegerOption((option) =>
           option
-            .setName('cantidad')
-            .setDescription('Cantidad maxima de usuarios, entre 0 y 99.')
+            .setName('slots')
+            .setDescription('Maximum number of users, between 0 and 99.')
             .setMinValue(0)
             .setMaxValue(99)
             .setRequired(true),
@@ -100,36 +100,36 @@ export const command = {
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('bloquear')
-        .setDescription('Cierra la sala para que no entre cualquiera.'),
+        .setName('lock')
+        .setDescription('Lock the room so not everyone can join.'),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('desbloquear')
-        .setDescription('Vuelve a abrir la sala al acceso normal.'),
+        .setName('unlock')
+        .setDescription('Open the room back up to normal access.'),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('permitir')
-        .setDescription('Permite el acceso a un usuario concreto.')
+        .setName('allow')
+        .setDescription('Allow a specific user into the room.')
         .addUserOption((option) =>
-          option.setName('usuario').setDescription('Usuario al que quieres permitir.').setRequired(true),
+          option.setName('user').setDescription('User you want to allow.').setRequired(true),
         ),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('sacar')
-        .setDescription('Saca a un usuario conectado de tu sala.')
+        .setName('kick')
+        .setDescription('Disconnect a user who is currently in your room.')
         .addUserOption((option) =>
-          option.setName('usuario').setDescription('Usuario al que quieres sacar.').setRequired(true),
+          option.setName('user').setDescription('User you want to disconnect.').setRequired(true),
         ),
     )
     .addSubcommand((subcommand) =>
       subcommand
-        .setName('transferir')
-        .setDescription('Transfiere la ownership de la sala a otra persona dentro de ella.')
+        .setName('transfer')
+        .setDescription('Transfer ownership of the room to someone else inside it.')
         .addUserOption((option) =>
-          option.setName('usuario').setDescription('Nuevo owner de la sala.').setRequired(true),
+          option.setName('user').setDescription('New room owner.').setRequired(true),
         ),
     ),
   async execute(interaction) {
@@ -144,7 +144,7 @@ export const command = {
 
     const botPermissions = [PermissionFlagsBits.ManageChannels];
 
-    if (subcommand === 'sacar') {
+    if (subcommand === 'kick') {
       botPermissions.push(PermissionFlagsBits.MoveMembers);
     }
 
@@ -152,19 +152,19 @@ export const command = {
       return;
     }
 
-    if (subcommand === 'estado') {
+    if (subcommand === 'status') {
       const textChannel = getTrackedTextChannel(roomContext.guild, roomContext.room);
 
       await sendEphemeral(
         interaction,
         [
-          `Sala: **${roomContext.channel.name}**`,
+          `Room: **${roomContext.channel.name}**`,
           `ID: \`${roomContext.channel.id}\``,
           `Owner: <@${roomContext.room.ownerId}>`,
-          `Miembros: **${roomContext.channel.members.size}**`,
-          `Limite: **${roomContext.channel.userLimit || 0}**`,
-          `Bloqueada: **${getLockState(roomContext.channel) ? 'si' : 'no'}**`,
-          `Chat de sala: ${textChannel ? textChannel.toString() : 'integrado en esta sala'}`,
+          `Members: **${roomContext.channel.members.size}**`,
+          `Limit: **${roomContext.channel.userLimit || 0}**`,
+          `Locked: **${getLockState(roomContext.channel) ? 'yes' : 'no'}**`,
+          `Room chat: ${textChannel ? textChannel.toString() : 'built into this room'}`,
         ].join('\n'),
       );
       return;
@@ -174,14 +174,14 @@ export const command = {
       const ownerStillInside = roomContext.channel.members.has(roomContext.room.ownerId);
 
       if (ownerStillInside) {
-        await sendEphemeral(interaction, 'El owner actual sigue dentro de la sala, asi que no puedes reclamarla.');
+        await sendEphemeral(interaction, 'The current owner is still in the room, so you cannot claim it.');
         return;
       }
 
       const refreshedRoom = await getVoiceRoom(roomContext.guild.id, roomContext.channel.id);
 
       if (!refreshedRoom) {
-        await sendEphemeral(interaction, 'La sala ya no aparece como gestionada por el bot.');
+        await sendEphemeral(interaction, 'This room is no longer tracked by the bot.');
         return;
       }
 
@@ -192,7 +192,7 @@ export const command = {
         getAuditReason(interaction, `claim manual de sala temporal por ${roomContext.actor.user.tag}`),
       );
 
-      await sendEphemeral(interaction, 'Ownership reclamada correctamente.');
+      await sendEphemeral(interaction, 'Ownership reclaimed successfully.');
       await sendModLog(interaction, 'Ownership de sala temporal reclamada', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
         { name: 'Antes', value: roomContext.room.ownerId ? `<@${roomContext.room.ownerId}>` : 'sin owner', inline: true },
@@ -201,18 +201,18 @@ export const command = {
       return;
     }
 
-    if (subcommand === 'renombrar') {
-      const name = interaction.options.getString('nombre', true).trim().slice(0, 100);
+    if (subcommand === 'rename') {
+      const name = interaction.options.getString('name', true).trim().slice(0, 100);
 
       if (!name) {
-        await sendEphemeral(interaction, 'El nombre no puede quedar vacio.');
+        await sendEphemeral(interaction, 'The room name cannot be empty.');
         return;
       }
 
       const previousName = roomContext.channel.name;
       await roomContext.channel.setName(name, getAuditReason(interaction, 'renombrar sala temporal'));
       await refreshVoiceRoomPanel(roomContext.channel);
-      await sendEphemeral(interaction, `Sala renombrada a **${name}**.`);
+      await sendEphemeral(interaction, `Room renamed to **${name}**.`);
       await sendModLog(interaction, 'Sala temporal renombrada', [
         { name: 'Antes', value: previousName, inline: true },
         { name: 'Despues', value: name, inline: true },
@@ -221,11 +221,11 @@ export const command = {
       return;
     }
 
-    if (subcommand === 'limite') {
-      const limit = interaction.options.getInteger('cantidad', true);
+    if (subcommand === 'limit') {
+      const limit = interaction.options.getInteger('slots', true);
       await roomContext.channel.setUserLimit(limit, getAuditReason(interaction, 'ajustar limite de sala temporal'));
       await refreshVoiceRoomPanel(roomContext.channel);
-      await sendEphemeral(interaction, `Limite actualizado a **${limit}**.`);
+      await sendEphemeral(interaction, `Room limit updated to **${limit}**.`);
       await sendModLog(interaction, 'Limite de sala temporal actualizado', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
         { name: 'Limite', value: String(limit), inline: true },
@@ -233,36 +233,36 @@ export const command = {
       return;
     }
 
-    if (subcommand === 'bloquear') {
+    if (subcommand === 'lock') {
       await roomContext.channel.permissionOverwrites.edit(
         roomContext.guild.roles.everyone,
         { Connect: false },
         { reason: getAuditReason(interaction, 'bloquear sala temporal') },
       );
       await refreshVoiceRoomPanel(roomContext.channel);
-      await sendEphemeral(interaction, 'Sala bloqueada. Solo entrara quien ya tenga acceso.');
+      await sendEphemeral(interaction, 'Room locked. Only allowed users will be able to join.');
       await sendModLog(interaction, 'Sala temporal bloqueada', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
       ]);
       return;
     }
 
-    if (subcommand === 'desbloquear') {
+    if (subcommand === 'unlock') {
       await roomContext.channel.permissionOverwrites.edit(
         roomContext.guild.roles.everyone,
         { Connect: null },
         { reason: getAuditReason(interaction, 'desbloquear sala temporal') },
       );
       await refreshVoiceRoomPanel(roomContext.channel);
-      await sendEphemeral(interaction, 'Sala desbloqueada.');
+      await sendEphemeral(interaction, 'Room unlocked.');
       await sendModLog(interaction, 'Sala temporal desbloqueada', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
       ]);
       return;
     }
 
-    if (subcommand === 'permitir') {
-      const user = interaction.options.getUser('usuario', true);
+    if (subcommand === 'allow') {
+      const user = interaction.options.getUser('user', true);
       const updatedRoom = await allowVoiceRoomMember(roomContext.guild.id, roomContext.channel.id, user.id);
 
       await roomContext.channel.permissionOverwrites.edit(
@@ -291,7 +291,7 @@ export const command = {
 
       await refreshVoiceRoomPanel(roomContext.channel);
 
-      await sendEphemeral(interaction, `Acceso concedido a **${user.tag}**.`);
+      await sendEphemeral(interaction, `Access granted to **${user.tag}**.`);
       await sendModLog(interaction, 'Acceso a sala temporal concedido', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
         { name: 'Usuario', value: `${user.tag}\n<@${user.id}>` },
@@ -299,17 +299,17 @@ export const command = {
       return;
     }
 
-    if (subcommand === 'sacar') {
-      const user = interaction.options.getUser('usuario', true);
+    if (subcommand === 'kick') {
+      const user = interaction.options.getUser('user', true);
       const targetMember = await roomContext.guild.members.fetch(user.id).catch(() => null);
 
       if (!targetMember || targetMember.voice.channelId !== roomContext.channel.id) {
-        await sendEphemeral(interaction, 'Ese usuario no esta conectado a tu sala ahora mismo.');
+        await sendEphemeral(interaction, 'That user is not connected to your room right now.');
         return;
       }
 
       await targetMember.voice.disconnect(getAuditReason(interaction, `sacar de sala temporal a ${user.tag}`));
-      await sendEphemeral(interaction, `Usuario sacado de la sala: **${user.tag}**.`);
+      await sendEphemeral(interaction, `Disconnected from the room: **${user.tag}**.`);
       await sendModLog(interaction, 'Usuario sacado de sala temporal', [
         { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
         { name: 'Usuario', value: `${user.tag}\n<@${user.id}>` },
@@ -317,30 +317,30 @@ export const command = {
       return;
     }
 
-    const user = interaction.options.getUser('usuario', true);
+    const user = interaction.options.getUser('user', true);
     const targetMember = await roomContext.guild.members.fetch(user.id).catch(() => null);
 
     if (!targetMember || targetMember.voice.channelId !== roomContext.channel.id) {
-      await sendEphemeral(interaction, 'El nuevo owner debe estar conectado dentro de la sala.');
+      await sendEphemeral(interaction, 'The new owner must be connected inside the room.');
       return;
     }
 
     const refreshedRoom = await getVoiceRoom(roomContext.guild.id, roomContext.channel.id);
 
     if (!refreshedRoom) {
-      await sendEphemeral(interaction, 'La sala ya no aparece como gestionada por el bot.');
+      await sendEphemeral(interaction, 'This room is no longer tracked by the bot.');
       return;
     }
 
-      await assignVoiceRoomOwner(
-        roomContext.channel,
-        refreshedRoom,
-        targetMember.id,
-        getAuditReason(interaction, `transferir sala temporal a ${user.tag}`),
-      );
-      await refreshVoiceRoomPanel(roomContext.channel);
+    await assignVoiceRoomOwner(
+      roomContext.channel,
+      refreshedRoom,
+      targetMember.id,
+      getAuditReason(interaction, `transferir sala temporal a ${user.tag}`),
+    );
+    await refreshVoiceRoomPanel(roomContext.channel);
 
-      await sendEphemeral(interaction, `Ownership transferida a **${user.tag}**.`);
+    await sendEphemeral(interaction, `Ownership transferred to **${user.tag}**.`);
     await sendModLog(interaction, 'Ownership de sala temporal transferida', [
       { name: 'Canal', value: `${roomContext.channel.name} (\`${roomContext.channel.id}\`)` },
       { name: 'Antes', value: `<@${roomContext.room.ownerId}>`, inline: true },

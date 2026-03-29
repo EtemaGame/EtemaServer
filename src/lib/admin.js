@@ -31,7 +31,7 @@ export function hasOwnerOverride(interaction) {
 }
 
 export function formatPermissionName(permission) {
-  return permissionNames.get(permission) ?? `Permiso ${permission.toString()}`;
+  return permissionNames.get(permission) ?? `Permission ${permission.toString()}`;
 }
 
 export function formatPermissionList(permissions) {
@@ -76,7 +76,7 @@ export function overwriteValueFromAction(action) {
 
 export async function getGuildContext(interaction) {
   if (!interaction.inGuild() || !interaction.guild) {
-    await sendEphemeral(interaction, 'Este comando solo funciona dentro de un servidor.');
+    await sendEphemeral(interaction, 'This command only works inside a server.');
     return null;
   }
 
@@ -119,7 +119,7 @@ export async function ensureBotPermissions(interaction, context, permissions) {
 
   await sendEphemeral(
     interaction,
-    `Al bot le faltan estos permisos: ${formatPermissionList(missing)}.`,
+    `The bot is missing these permissions: ${formatPermissionList(missing)}.`,
   );
   return false;
 }
