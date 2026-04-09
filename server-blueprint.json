@@ -61,16 +61,6 @@
       ]
     },
     {
-      "name": "💬 COMMUNITY",
-      "visibility": "public_chat",
-      "channels": [
-        { "name": "💬 general", "type": "text" },
-        { "name": "🤖 bot-commands-public", "type": "text" },
-        { "name": "💡 suggestions", "type": "forum" },
-        { "name": "🐞 issues-report", "type": "forum" }
-      ]
-    },
-    {
       "name": "🧩 MODS",
       "visibility": "public_chat",
       "channels": [
@@ -93,6 +83,16 @@
         { "name": "📑 arcane-echo-tutorial", "type": "forum", "role": "ArcaneEcho" },
         { "name": "🧝 ragnar", "type": "text", "role": "Ragnar" },
         { "name": "📑 ragnar-tutorial", "type": "forum", "role": "Ragnar" }
+      ]
+    },
+    {
+      "name": "💬 COMMUNITY",
+      "visibility": "public_chat",
+      "channels": [
+        { "name": "💬 general", "type": "text" },
+        { "name": "🤖 bot-commands-public", "type": "text" },
+        { "name": "💡 suggestions", "type": "forum" },
+        { "name": "🐞 issues-report", "type": "forum" }
       ]
     },
     {

@@ -106,17 +106,34 @@ export async function sendWelcomeMessage(member, options = {}) {
   }
 
   const content = buildWelcomeMessage(config.messageTemplate, getMessageValues(member));
-  const finalContent = options.prefix ? `${options.prefix}\n${content}` : content;
+  
+  const embed = new EmbedBuilder()
+    .setColor(0x5865f2) // Discord Blurple
+    .setTitle('¡Bienvenido al servidor!')
+    .setDescription(content)
+    .setThumbnail(member.user.displayAvatarURL({ forceStatic: false }))
+    .addFields(
+      { name: 'Miembro #', value: String(member.guild.memberCount), inline: true },
+      { name: 'Cuenta creada', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true }
+    )
+    .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
+    .setTimestamp();
 
-  await channel.send({
-    content: finalContent,
+  const messageOptions = {
+    embeds: [embed],
     allowedMentions: {
       parse: [],
       roles: [],
       users: [member.id],
       repliedUser: false,
     },
-  });
+  };
+
+  if (options.prefix) {
+    messageOptions.content = options.prefix;
+  }
+
+  await channel.send(messageOptions);
 
   return {
     sent: true,
