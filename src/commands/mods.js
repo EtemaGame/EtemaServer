@@ -26,40 +26,40 @@ function addRoleChoiceOption(option) {
 export const command = {
   data: new SlashCommandBuilder()
     .setName('mods')
-    .setDescription('Gestiona tus roles de aviso para mods.')
+    .setDescription('Manage your mod notification roles.')
     .setDMPermission(false)
     .addSubcommand((subcommand) =>
       subcommand
         .setName('list')
-        .setDescription('Muestra los roles de aviso disponibles y tus suscripciones actuales.'),
+        .setDescription('Show the available mod notification roles and your current subscriptions.'),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('join')
-        .setDescription('Suscríbete a un rol de aviso de mod.')
+        .setDescription('Subscribe to a mod notification role.')
         .addStringOption((option) => addRoleChoiceOption(option)),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('leave')
-        .setDescription('Quita tu suscripción a un rol de aviso de mod.')
+        .setDescription('Unsubscribe from a mod notification role.')
         .addStringOption((option) => addRoleChoiceOption(option)),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('panel')
-        .setDescription('Publica el panel de autoasignación para roles de aviso.')
+        .setDescription('Post the self-assign panel for mod notification roles.')
         .addChannelOption((option) =>
           option
-            .setName('canal')
-            .setDescription('Canal donde se publicará el panel.')
+            .setName('channel')
+            .setDescription('Channel where the panel should be posted.')
             .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
             .setRequired(false),
         )
         .addBooleanOption((option) =>
           option
-            .setName('limpiar')
-            .setDescription('Si es true, borrará los mensajes previos del bot en ese canal.')
+            .setName('clean')
+            .setDescription('If true, it will delete the bot previous messages in that channel.')
             .setRequired(false),
         ),
     ),
@@ -77,10 +77,10 @@ export const command = {
         return;
       }
 
-      const targetChannel = interaction.options.getChannel('canal') ?? interaction.channel;
+      const targetChannel = interaction.options.getChannel('channel') ?? interaction.channel;
 
       if (!targetChannel?.isTextBased() || typeof targetChannel.send !== 'function') {
-        await sendEphemeral(interaction, 'Elige un canal de texto o avisos para el panel.');
+        await sendEphemeral(interaction, 'Pick a regular text or announcement channel for the panel.');
         return;
       }
 
@@ -93,7 +93,7 @@ export const command = {
       ) {
         await sendEphemeral(
           interaction,
-          'Necesito permisos de `Ver canal`, `Enviar mensajes` e `Insertar enlaces` en ese canal.',
+          'I need `View Channel`, `Send Messages`, and `Embed Links` in that channel.',
         );
         return;
       }
@@ -101,11 +101,11 @@ export const command = {
       const panelPayload = buildModAlertRolePanel(context.guild);
 
       if (!panelPayload) {
-        await sendEphemeral(interaction, 'No hay roles de aviso configurados en el blueprint todavía.');
+        await sendEphemeral(interaction, 'No mod notification roles are configured in the blueprint yet.');
         return;
       }
 
-      const clean = interaction.options.getBoolean('limpiar') ?? false;
+      const clean = interaction.options.getBoolean('clean') ?? false;
 
       if (clean) {
         const messages = await targetChannel.messages.fetch({ limit: 100 });
@@ -116,15 +116,15 @@ export const command = {
       }
 
       await targetChannel.send(panelPayload);
-      await sendEphemeral(interaction, `Panel de avisos publicado en <#${targetChannel.id}>.`);
+      await sendEphemeral(interaction, `Mod alert panel posted in <#${targetChannel.id}>.`);
 
       const availableRoles = getAvailableModAlertRoles(context.guild);
       const roleSummary = availableRoles.length > 0
         ? availableRoles.map((entry) => `\`${entry.role.name}\``).join(', ').slice(0, 1024)
-        : 'ninguno';
+        : 'none';
 
-      await sendModLog(interaction, 'Panel de avisos publicado', [
-        { name: 'Canal', value: `<#${targetChannel.id}>`, inline: true },
+      await sendModLog(interaction, 'Mod alert panel posted', [
+        { name: 'Channel', value: `<#${targetChannel.id}>`, inline: true },
         { name: 'Roles', value: roleSummary },
       ]);
       return;

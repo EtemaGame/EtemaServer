@@ -79,8 +79,8 @@ function loadCatalogFromBlueprint() {
           : null;
         const label = formatRoleLabel(roleName) || roleName;
         const description = linkedChannelSlug
-          ? `Recibe avisos de #${linkedChannelSlug}`
-          : `Recibe avisos de ${label}`;
+          ? `Get alerts for #${linkedChannelSlug}`
+          : `Get alerts for ${label}`;
 
         return {
           roleName,
@@ -131,7 +131,7 @@ function getRoleUpdateError(role, context) {
   }
 
   if (role.comparePositionTo(context.me.roles.highest) >= 0) {
-    return 'Ese rol está por encima o igual al del bot, no puedo asignarlo.';
+    return 'That role is above or equal to the bot highest role, so I cannot assign it.';
   }
 
   return null;
@@ -224,26 +224,26 @@ export function buildModAlertRolePanel(guild) {
   }
 
   const descriptionLines = [
-    'Usa el menú de abajo para activar o desactivar los roles de aviso de los mods que te interesen.',
-    'Si seleccionas un rol que ya tienes, se te quitará. Si seleccionas uno nuevo, se te asignará.',
+    'Use the menu below to toggle the mod notification roles you want.',
+    'Selecting a role you already have removes it. Selecting a role you do not have adds it.',
     '',
     ...availableRoles.map((entry) => {
       const destinations = formatRoleDestinations(entry);
-      return destinations ? `🔹 **${entry.label}**: ${destinations}` : `🔹 **${entry.label}**`;
+      return destinations ? `- **${entry.label}**: ${destinations}` : `- **${entry.label}**`;
     }),
     '',
-    'También puedes usar `/mods list`, `/mods join` y `/mods leave`.',
+    'You can also use `/mods list`, `/mods join`, and `/mods leave`.',
   ];
 
   const embed = new EmbedBuilder()
     .setColor(0x00a2ed)
-    .setTitle('🔔 Suscripción a Mods')
+    .setTitle('🔔 Mod Subscriptions')
     .setDescription(descriptionLines.join('\n'))
     .setTimestamp();
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(MOD_ALERT_ROLE_SELECT_ID)
-    .setPlaceholder('Selecciona uno o varios mods para seguir/dejar de seguir')
+    .setPlaceholder('Select one or more mods to follow or unfollow')
     .setMinValues(1)
     .setMaxValues(Math.min(availableRoles.length, 25))
     .addOptions(

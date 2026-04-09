@@ -109,12 +109,12 @@ export async function sendWelcomeMessage(member, options = {}) {
   
   const embed = new EmbedBuilder()
     .setColor(0x5865f2) // Discord Blurple
-    .setTitle('¡Bienvenido al servidor!')
+    .setTitle('Welcome to the server!')
     .setDescription(content)
     .setThumbnail(member.user.displayAvatarURL({ forceStatic: false }))
     .addFields(
-      { name: 'Miembro #', value: String(member.guild.memberCount), inline: true },
-      { name: 'Cuenta creada', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true }
+      { name: 'Member #', value: String(member.guild.memberCount), inline: true },
+      { name: 'Account created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true }
     )
     .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
     .setTimestamp();
