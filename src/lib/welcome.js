@@ -1,4 +1,4 @@
-import { ChannelType } from 'discord.js';
+import { ChannelType, EmbedBuilder } from 'discord.js';
 import { getAutomodConfig } from './automod-config.js';
 import { getWelcomeConfig } from './welcome-config.js';
 
@@ -80,12 +80,26 @@ async function shouldSkipWelcome(member) {
   return accountAgeMs < minAgeMs;
 }
 
-function getMessageValues(member) {
+export function getMessageValues(member) {
   return {
     userMention: `<@${member.id}>`,
     serverName: member.guild.name,
     memberCount: member.guild.memberCount,
   };
+}
+
+export function buildWelcomeEmbed(member, content) {
+  return new EmbedBuilder()
+    .setColor(0x5865f2) // Discord Blurple
+    .setTitle('Welcome to the server!')
+    .setDescription(content)
+    .setThumbnail(member.user.displayAvatarURL({ forceStatic: false }))
+    .addFields(
+      { name: 'Member #', value: String(member.guild.memberCount), inline: true },
+      { name: 'Account created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+    )
+    .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
+    .setTimestamp();
 }
 
 export async function sendWelcomeMessage(member, options = {}) {
@@ -107,17 +121,7 @@ export async function sendWelcomeMessage(member, options = {}) {
 
   const content = buildWelcomeMessage(config.messageTemplate, getMessageValues(member));
   
-  const embed = new EmbedBuilder()
-    .setColor(0x5865f2) // Discord Blurple
-    .setTitle('Welcome to the server!')
-    .setDescription(content)
-    .setThumbnail(member.user.displayAvatarURL({ forceStatic: false }))
-    .addFields(
-      { name: 'Member #', value: String(member.guild.memberCount), inline: true },
-      { name: 'Account created', value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true }
-    )
-    .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
-    .setTimestamp();
+  const embed = buildWelcomeEmbed(member, content);
 
   const messageOptions = {
     embeds: [embed],
@@ -138,7 +142,8 @@ export async function sendWelcomeMessage(member, options = {}) {
   return {
     sent: true,
     channel,
-    content: finalContent,
+    content,
+    embed,
   };
 }
 
