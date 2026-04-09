@@ -6,7 +6,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(currentDir, '..', '..');
 const configPath = path.resolve(rootDir, 'data', 'welcome-config.json');
 
-export const DEFAULT_WELCOME_TEMPLATE = 'Welcome {user} to **{server}**. We now have **{memberCount}** member(s).';
+export const DEFAULT_WELCOME_TEMPLATE = '¡Bienvenido/a {user} a **{server}**! Gracias por unirte, ya somos **{memberCount}** miembr@s en la comunidad.';
 
 function parseBooleanEnv(value, fallback) {
   const normalized = String(value ?? '').trim().toLowerCase();
@@ -24,7 +24,7 @@ function parseBooleanEnv(value, fallback) {
 
 export function getDefaultWelcomeConfig() {
   return {
-    enabled: parseBooleanEnv(process.env.WELCOME_ENABLED, false),
+    enabled: parseBooleanEnv(process.env.WELCOME_ENABLED, true),
     channelId: process.env.WELCOME_CHANNEL_ID?.trim() || null,
     messageTemplate: process.env.WELCOME_MESSAGE_TEMPLATE?.trim() || DEFAULT_WELCOME_TEMPLATE,
   };
